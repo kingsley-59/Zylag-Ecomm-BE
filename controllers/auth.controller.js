@@ -1,8 +1,10 @@
 const { hash, compare } = require("bcrypt");
 const { errorResponse, badRequestResponse, successResponse } = require("../helpers/apiResponse");
 const User = require("../models/UserModel");
-const { sign } = require("jsonwebtoken");
+const { sign, verify } = require("jsonwebtoken");
+const MailService = require("../modules/nodemailer");
 
+const mailService = new MailService();
 
 /**
  * 
@@ -51,6 +53,11 @@ exports.login = async (req, res) => {
     }
 }
 
+/**
+ * 
+ * @param {import("express").Request} req 
+ * @param {import("express").Response} res 
+ */
 exports.forgotPassword = async (req, res) => {
     const { email } = req.body;
 
@@ -59,9 +66,49 @@ exports.forgotPassword = async (req, res) => {
         if (!user) return badRequestResponse(res, "user with this email does not exist");
         if (!user.isActive) return badRequestResponse(res, 'Your account has been disabled. Please contact support.');
 
+        // generate passwprd reset token
         const token = sign({ id: user._id, email }, process.env.JWT_SECRET, { expiresIn: '15m' });
-        
+
+        // send password reset link to email
+        const { html, plainText } = mailService.getMailTemplate('forgotPassword', {
+            name: user.fullname,
+            resetLink: `${process.env.CLIENT_URL}/password-reset?token=${token}`
+        })
+        const info = await mailService.sendMail({
+            from: `${process.env.CONTACT_NAME} <${process.env.CONTACT_EMAIL}>`,
+            to: email,
+            replyTo: process.env.CONTACT_EMAIL,
+            subject: `Password Reset Request - ${process.env.COMPANY_NAME}`,
+            html,
+            text: plainText
+        })
+
+        successResponse(res, null, "Reset password link has been sent to your email.");
     } catch (error) {
         errorResponse(res, error.message);
+    }
+}
+
+/**
+ * 
+ * @param {import("express").Request} req 
+ * @param {import("express").Response} res 
+ */
+exports.resetPassword = async (req, res) => {
+    const { password, token } = req.body;
+
+    try {
+        const decoded = verify(token, process.env.JWT_SECRET);
+        const user = await User.findOne({ email: decoded.email, isActive: true });
+        if (!user) return badRequestResponse(res, "Email no longer exists.")
+
+        const passwordHash = await hash(password, 10);
+        user.passwordHash = passwordHash;
+        await user.save();
+
+        successResponse(res, null, "Password reset successfully");
+    } catch (error) {
+        console.log(error.message);
+        errorResponse(res, 'Failed to complete password reset. Please try again.', 400)
     }
 }
