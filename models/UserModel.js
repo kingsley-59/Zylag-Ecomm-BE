@@ -11,6 +11,8 @@ const UserSchema = new Schema({
     photo: { type: String },
     isActive: { type: Boolean, default: true },
     role: { type: String, enum: ['user', 'admin', 'superadmin'], default: 'user' },
+
+    emailVerificationToken: { type: String },
 }, { timestamps: true });
 
 const User = model('User', UserSchema);

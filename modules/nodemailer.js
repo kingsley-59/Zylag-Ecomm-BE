@@ -2,6 +2,7 @@ const nodemailer = require('nodemailer')
 const smtpTransport = require('nodemailer-smtp-transport')
 const handlebars = require('handlebars');
 const { htmlToText } = require('html-to-text');
+const { sign } = require('jsonwebtoken');
 require('dotenv').config()
 
 
@@ -23,18 +24,26 @@ class MailService {
             }
         })
 
-        this.transporter = nodemailer.createTransport(smtpConfig)
+        this.transporter = nodemailer.createTransport(smtpConfig);
+        this.from = `${process.env.CONTACT_NAME} <${process.env.CONTACT_EMAIL}>`;
+        this.replyTo = process.env.CONTACT_EMAIL;
     }
 
 
     /**
      * 
      * @param {nodemailer.SendMailOptions} mailOptions 
+     * @param {*} template 
+     * @param {*} context 
      * @returns 
      */
-    async sendMail(mailOptions) {
-        this.mailOptions = mailOptions;
+    async sendMail(mailOptions, template = '', context) {
+
         try {
+            const { html, plainText } = this.getMailTemplate(template, context)
+            mailOptions.html = html;
+            mailOptions.text = plainText;
+
             const info = await this.transporter.sendMail(mailOptions)
             console.log(info)
             return info
@@ -54,6 +63,39 @@ class MailService {
         const plainText = htmlToText(html);
 
         return { html, plainText };
+    }
+
+    async sendWelcomeEmail(user) {
+        try {
+            const info = await this.sendMail({
+                from: this.from,
+                to: user.email,
+                replyTo: this.replyTo,
+                subject: `Password Reset Request - ${process.env.COMPANY_NAME}`,
+            }, 'welcome', { name: user.fullname });
+            return info;
+        } catch (error) {
+            console.log(error);
+            throw new Error('Failed so send verification email');
+        }
+    }
+
+    async sendVerificationEmail(user, token) {
+        try {
+            const info = await this.sendMail({
+                from: this.from,
+                to: user.email,
+                replyTo: this.replyTo,
+                subject: `Password Reset Request - ${process.env.COMPANY_NAME}`,
+            }, 'emailVerification', {
+                name: user.fullname,
+                verificationLink: `${process.env.CLIENT_URL}/password-reset?token=${token}`
+            })
+            return info;
+        } catch (error) {
+            console.log(error);
+            throw new Error('Failed so send verification email');
+        }
     }
 }
 

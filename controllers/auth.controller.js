@@ -3,8 +3,10 @@ const { errorResponse, badRequestResponse, successResponse } = require("../helpe
 const User = require("../models/UserModel");
 const { sign, verify } = require("jsonwebtoken");
 const MailService = require("../modules/nodemailer");
+const { Document } = require("mongoose");
 
 const mailService = new MailService();
+
 
 /**
  * 
@@ -24,6 +26,12 @@ exports.register = async (req, res) => {
         })
         await newUser.save();
 
+        // send welcome email
+        await mailService.sendWelcomeEmail(newUser);
+
+        // send email verification link
+        await mailService.sendVerificationEmail(newUser);
+
         return successResponse(res, null, "Registration successful.");
     } catch (error) {
         errorResponse(res, error.message);
@@ -42,12 +50,52 @@ exports.login = async (req, res) => {
         const user = await User.findOne({ email });
         if (!user) return badRequestResponse(res, "User with this email does not exist");
         if (!(await compare(password, user.passwordHash))) return badRequestResponse(res, "Invalid email or password");
+        if (!user.emailIsVerified) return badRequestResponse(res, "Please verify your email.");
         if (!user.isActive) return badRequestResponse(res, "This user has been diabled. Please contact support");
 
         const payload = { id: user._id, email: user.email, role: user.role };
         const token = sign(payload, process.env.JWT_SECRET, { expiresIn: '30d' });
 
         successResponse(res, { ...user.toObject(), passwordHash: undefined, token }, 'Login siccessful.');
+    } catch (error) {
+        errorResponse(res, error.message);
+    }
+}
+
+exports.sendEmailverificationLink = async (req, res) => {
+    const email = req.query?.email;
+    if (!email) return badRequestResponse(res, "Email is a required query parameter");
+
+    try {
+        const user = await User.findOne({ email });
+        if (!user) return badRequestResponse(res, "user with this email does not exist");
+
+        const token = sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '15m' });
+        user.emailVerificationToken = token;
+        await user.save();
+        await mailService.sendVerificationEmail(user);
+
+        successResponse(res, null, "verification email sent. Please check your inbox.");
+    } catch (error) {
+        errorResponse(res, error.message);
+    }
+}
+
+exports.verifyEmailWithToken = async (req, res)  => {
+    const token = req.query?.token;
+    if (!token) return badRequestResponse(res, "token is a required query parameter");
+
+    try {
+        const decoded = verify(token, process.env.JWT_SECRET);
+        const user = await User.findOne({ _id: decoded.id, isActive: true });
+        if (!user) return badRequestResponse(res, "Email no longer exists.")
+        if (user.emailVerificationToken !== token) return badRequestResponse('Invalid token.');
+        
+        user.emailVerificationToken = null,
+        user.emailIsVerified = true;
+        await user.save();
+
+        successResponse(res, null, "Email verified successfully.");
     } catch (error) {
         errorResponse(res, error.message);
     }
