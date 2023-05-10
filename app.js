@@ -2,11 +2,36 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var mongoose = require('mongoose');
 
 var authRouter = require('./routes/auth.routes');
-var usersRouter = require('./routes/user.routess');
+var usersRouter = require('./routes/user.routes');
 
 var app = express();
+
+// DB connection
+const MONGODB_URL = process.env.MONGODB_URL;
+
+mongoose.set('strictQuery', false);
+if (process.env.NODE_ENV === 'developement') {
+    mongoose.set('debug', true);
+}
+
+mongoose
+    .connect(MONGODB_URL)
+    .then((conn) => {
+        //don't show the log when it is prod
+        if (process.env.NODE_ENV !== 'prod') {
+            console.log('\nConnected to %s', mongoose.connection.host);
+            console.log('App is running ... \n');
+            console.log('Press CTRL + C to stop the process. \n');
+        }
+    })
+    .catch((err) => {
+        console.error('App starting error:', err.message);
+        process.exit(1);
+    });
+
 
 // Middlewares
 app.use(logger('dev'));
