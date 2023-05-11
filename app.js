@@ -6,6 +6,7 @@ var mongoose = require('mongoose');
 
 var authRouter = require('./routes/auth.routes');
 var usersRouter = require('./routes/user.routes');
+var adsRouter = require('./routes/ad.routes');
 
 var app = express();
 
@@ -44,6 +45,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Api routes
 app.use('/auth', authRouter);
 app.use('/users', usersRouter);
+app.use('/ads', adsRouter);
 
 
 // Error handlers

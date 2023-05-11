@@ -6,19 +6,18 @@ const Category = require("../models/CategoryModel");
 
 exports.getAdsByCategory = async function () {
     const { categoryId } = req.params;
-    const { limit, page } = req.query;
-    const result = { ads: [], totalAds: 0, totalPages: 0, currentPage: parseInt(page), };
+    const result = { ads: [], totalAds: 0, totalPages: 0, currentPage: 0, };
 
     try {
-        const pageNumber = parseInt(page);
-        const limitNumber = parseInt(limit);
+        const pageNumber = parseInt(req.query?.page || 1);
+        const limitNumber = parseInt(req.query?.limit || 10);
 
         const category = await Category.findById(categoryId).lean();
         if (!category) return badRequestResponse(res, 'This category does not exist');
 
         if (category.parent) {
             result.ads = await Ad.find({ category: category._id })
-                .sort({ createdAt: 'desc' })
+                .sort({ createdAt: req.query?.desc == false ? 'asc' : 'desc' })
                 .skip((pageNumber - 1) * limitNumber)
                 .limit(limitNumber)
                 .populate('tags');
@@ -28,7 +27,7 @@ exports.getAdsByCategory = async function () {
             const childCategories = await Category.find({ parent: categoryId }).lean();
             for (let c of childCategories) {
                 let ads = await Ad.find({ category: c._id })
-                    .sort({ createdAt: 'desc' })
+                    .sort({ createdAt: req.query?.desc == false ? 'asc' : 'desc' })
                     .skip((pageNumber - 1) * limitNumber)
                     .limit(limitNumber)
                     .populate('tags');
@@ -38,6 +37,7 @@ exports.getAdsByCategory = async function () {
             result.totalPages = Math.ceil(result.totalAds / limitNumber);
         }
 
+        result.currentPage = pageNumber;
         successResponse(res, result, result.ads.length > 0 ? "Ads fetched successfully." : "Oops! No ads in this category.");
     } catch (error) {
         errorResponse(res, error.message);
@@ -45,8 +45,9 @@ exports.getAdsByCategory = async function () {
 }
 
 exports.searchAdsWithFilters = async function () {
-    const { text, categoryId, adType, priceMin, priceMax, withVideo, desc, nearMe, radius, limit, page } = req.query;
-    const result = { ads: [], totalAds: 0, totalPages: 0, currentPage: parseInt(page) };
+    const { text, categoryId, adType, priceMin, priceMax, withVideo, desc, nearMe, radius, } = req.query;
+    if (!text) return badRequestResponse(res, 'text is a required query param');
+    const result = { ads: [], totalAds: 0, totalPages: 0, currentPage: 0 };
 
     const searchQuery = {
         $or: [
@@ -75,17 +76,18 @@ exports.searchAdsWithFilters = async function () {
     }
 
     try {
-        const pageNumber = parseInt(page);
-        const limitNumber = parseInt(limit);
+        const pageNumber = parseInt(req.query?.page || 1);
+        const limitNumber = parseInt(req.query?.limit || 10);
 
         const ads = await Ad.find(searchQuery)
-            .sort({ createdAt: desc == true ? 'desc' : 'asc' })
+            .sort({ createdAt: desc == false ? 'asc' : 'desc' })
             .skip((pageNumber - 1) * limitNumber)
             .limit(limitNumber)
             .populate('tags');
         result.ads = ads;
         result.totalAds = await Ad.countDocuments(searchQuery);
         result.totalPages = Math.ceil(result.totalAds / limitNumber)
+        result.currentPage = pageNumber;
 
         successResponse(res, result, "Results fetched successfully");
     } catch (error) {
@@ -93,6 +95,42 @@ exports.searchAdsWithFilters = async function () {
     }
 }
 
-exports.getAdsByTag = async function () { }
+exports.getAdsByTag = async function () {
+    const { tagId } = req.params;
+    const result = { ads: [], totalAds: 0, totalPages: 0, currentPage: 0 };
 
-exports.getAdsByPriceRange = async function () { }
+    try {
+        const pageNumber = parseInt(req.query?.page || 1);
+        const limitNumber = parseInt(req.query?.limit || 10);
+        const adsWithTag = await Ad.find({ tags: { $in: [tagId] } })
+            .sort({ createdAt: req.query?.desc == false ? 'asc' : 'desc' })
+            .skip((pageNumber - 1) * limitNumber)
+            .limit(limitNumber)
+            .populate('tags');
+
+        result.ads = adsWithTag;
+        result.totalAds = await Ad.countDocuments({ tags: { $in: [tagId] } })
+        result.totalPages = Math.ceil(result.totalAds / limitNumber);
+        result.currentPage = pageNumber;
+
+        successResponse(res, result, "Success");
+    } catch (error) {
+        errorResponse(res, error.message);
+    }
+}
+
+exports.createAd = async function () {
+    const { id } = req.user;
+    
+    try {
+        const newAd = new Ad({
+            ...req.body,
+            createdBy: id
+        });
+        await newAd.save();
+
+        successResponse(res, newAd.toObject(), "Ad posted successfully.");
+    } catch (error) {
+        errorResponse(res, error.message);
+    }
+}
