@@ -21,7 +21,7 @@ const adSchema = new Schema({
         enum: ['new', 'used'],
         required: true,
     },
-    images: [
+    photos: [
         {
             type: String,
         },

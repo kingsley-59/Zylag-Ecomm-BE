@@ -121,10 +121,13 @@ exports.getAdsByTag = async function () {
 
 exports.createAd = async function () {
     const { id } = req.user;
+    const photos = req.files;
+    if (!Array.isArray(photos) || photos?.length < 4) return badRequestResponse(res, "At least 4 photos are required.");
     
     try {
         const newAd = new Ad({
             ...req.body,
+            photos,
             createdBy: id
         });
         await newAd.save();
