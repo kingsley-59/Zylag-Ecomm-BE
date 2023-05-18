@@ -3,7 +3,6 @@ const { errorResponse, badRequestResponse, successResponse } = require("../helpe
 const User = require("../models/UserModel");
 const { sign, verify } = require("jsonwebtoken");
 const MailService = require("../modules/nodemailer");
-const { Document } = require("mongoose");
 
 const mailService = new MailService();
 
@@ -69,6 +68,7 @@ exports.sendEmailverificationLink = async (req, res) => {
     try {
         const user = await User.findOne({ email });
         if (!user) return badRequestResponse(res, "user with this email does not exist");
+        if (!user.isActive) return badRequestResponse(res, "This user has been diabled. Please contact support");
 
         const token = sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '15m' });
         user.emailVerificationToken = token;

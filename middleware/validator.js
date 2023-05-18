@@ -3,7 +3,7 @@ const JoiWithPhone = Joi.extend(require('joi-phone-number'));
 
 
 const vschema = {
-    name: Joi.string().alphanum().min(3).max(30).required(),
+    name: Joi.string().min(3).max(30).required(),
     email: Joi.string().email({ minDomainSegments: 2, tlds: { allow: ['com', 'net'] } }),
     phoneNumber: JoiWithPhone.string().phoneNumber({
         defaultCountry: 'NG',
@@ -25,13 +25,13 @@ const vschema = {
             'any.required': 'Password is required',
         }),
     passwordEasy: Joi.string()
-        .min(8)
+        .min(6)
         .pattern(new RegExp('^[a-zA-Z0-9]{3,30}$'))
         .required()
         .messages({
             'string.base': 'Password must be a string',
             'string.empty': 'Password is required',
-            'string.min': 'Password must be at least 8 characters long',
+            'string.min': 'Password must be at least 6 characters long',
             'string.pattern.base': 'Password must contain only alphanumeric characters',
             'any.required': 'Password is required',
         }),

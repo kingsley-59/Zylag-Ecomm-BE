@@ -2,7 +2,7 @@ const { register, login, forgotPassword, resetPassword, sendEmailverificationLin
 const { RegisterSchema, LoginSchema, ForgotPasswordSchema, ResestPasswordSchema } = require('../middleware/validator');
 
 const router = require('express').Router();
-const validator = require('express-joi-validation').createValidator({});
+const validator = require('express-joi-validation').createValidator({ passError: true });
 
 
 router.get('/send-verification-email', sendEmailverificationLink);

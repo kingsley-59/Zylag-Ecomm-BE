@@ -15,5 +15,7 @@ const UserSchema = new Schema({
     emailVerificationToken: { type: String },
 }, { timestamps: true });
 
+UserSchema.statics.allowedFields = ['fullname', 'email', 'phoneNumber', 'address', 'photo']
+
 const User = model('User', UserSchema);
 module.exports = User;

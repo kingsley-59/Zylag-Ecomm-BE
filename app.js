@@ -7,6 +7,8 @@ var mongoose = require('mongoose');
 var authRouter = require('./routes/auth.routes');
 var usersRouter = require('./routes/user.routes');
 var adsRouter = require('./routes/ad.routes');
+var favRouter = require('./routes/favorite.routes');
+const { errorResponse } = require('./helpers/apiResponse');
 
 var app = express();
 
@@ -46,6 +48,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/auth', authRouter);
 app.use('/users', usersRouter);
 app.use('/ads', adsRouter);
+app.use('/favorite', favRouter);
 
 
 // Error handlers
@@ -60,17 +63,16 @@ app.use((req, res, next) => {
 app.use((err, req, res, next) => {
     console.error(err); // Log the error for debugging purposes
 
+    // handle validation errors
+    if (err && err.error && err.error?.isJoi) {
+        return errorResponse(res, err.error.toString(), 400)
+    }
+
     // Determine the error status code
     const statusCode = err.statusCode || 500;
 
-    // Prepare the error response
-    const errorResponse = {
-        message: err.message || 'Internal Server Error',
-        error: err,
-    };
-
     // Send the error response
-    res.status(statusCode).json(errorResponse);
+    errorResponse(res, err.message || 'Something went wrong', statusCode);
 })
 
 module.exports = app;

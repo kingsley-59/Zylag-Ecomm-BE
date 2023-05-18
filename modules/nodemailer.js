@@ -33,7 +33,7 @@ class MailService {
     /**
      * 
      * @param {nodemailer.SendMailOptions} mailOptions 
-     * @param {*} template 
+     * @param {String} template 
      * @param {*} context 
      * @returns 
      */

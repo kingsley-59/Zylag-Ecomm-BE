@@ -37,7 +37,7 @@ exports.getAdsByCategory = async function () {
             result.totalPages = Math.ceil(result.totalAds / limitNumber);
         }
 
-        result.currentPage = pageNumber;
+        result.currentPage = pageNumber; 
         successResponse(res, result, result.ads.length > 0 ? "Ads fetched successfully." : "Oops! No ads in this category.");
     } catch (error) {
         errorResponse(res, error.message);
@@ -83,7 +83,7 @@ exports.searchAdsWithFilters = async function () {
             .sort({ createdAt: desc == false ? 'asc' : 'desc' })
             .skip((pageNumber - 1) * limitNumber)
             .limit(limitNumber)
-            .populate('tags');
+            .populate('tags category');
         result.ads = ads;
         result.totalAds = await Ad.countDocuments(searchQuery);
         result.totalPages = Math.ceil(result.totalAds / limitNumber)
