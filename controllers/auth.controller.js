@@ -14,26 +14,35 @@ const mailService = new MailService();
  */
 exports.register = async (req, res) => {
     const { fullname, email, password } = req.body;
+    let newUser;
 
     try {
-        const user = User.findOne({ email });
+        const user = await User.findOne({ email });
         if (user) return badRequestResponse(res, "user with this email already exists");
 
         const passwordHash = await hash(password, 10);
-        const newUser = new User({
+        newUser = new User({
             fullname, email, passwordHash
         })
         await newUser.save();
 
+        return successResponse(res, null, "Registration successful.");
+    } catch (error) {
+        errorResponse(res, error.message);
+    }
+
+    // send necessary emails
+    try {
         // send welcome email
         await mailService.sendWelcomeEmail(newUser);
 
         // send email verification link
-        await mailService.sendVerificationEmail(newUser);
-
-        return successResponse(res, null, "Registration successful.");
+        const token = sign({ id: newUser._id, email: newUser.email }, process.env.JWT_SECRET, { expiresIn: '15m' });
+        newUser.emailVerificationToken = token;
+        await newUser.save();
+        await mailService.sendVerificationEmail(newUser, token);
     } catch (error) {
-        errorResponse(res, error.message);
+        console.log(error)
     }
 }
 
@@ -55,7 +64,7 @@ exports.login = async (req, res) => {
         const payload = { id: user._id, email: user.email, role: user.role };
         const token = sign(payload, process.env.JWT_SECRET, { expiresIn: '30d' });
 
-        successResponse(res, { ...user.toObject(), passwordHash: undefined, token }, 'Login siccessful.');
+        successResponse(res, { ...user.toObject(), passwordHash: undefined, token }, 'Login successful.');
     } catch (error) {
         errorResponse(res, error.message);
     }
@@ -73,7 +82,7 @@ exports.sendEmailverificationLink = async (req, res) => {
         const token = sign({ id: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '15m' });
         user.emailVerificationToken = token;
         await user.save();
-        await mailService.sendVerificationEmail(user);
+        await mailService.sendVerificationEmail(user, token);
 
         successResponse(res, null, "verification email sent. Please check your inbox.");
     } catch (error) {
@@ -95,9 +104,11 @@ exports.verifyEmailWithToken = async (req, res)  => {
         user.emailIsVerified = true;
         await user.save();
 
-        successResponse(res, null, "Email verified successfully.");
+        // successResponse(res, null, "Email verified successfully.");
+        res.redirect('/');
     } catch (error) {
-        errorResponse(res, error.message);
+        // errorResponse(res, error.message);
+        res.send(error.message);
     }
 }
 

@@ -2,7 +2,8 @@ const nodemailer = require('nodemailer')
 const smtpTransport = require('nodemailer-smtp-transport')
 const handlebars = require('handlebars');
 const { htmlToText } = require('html-to-text');
-const { sign } = require('jsonwebtoken');
+const path = require('path');
+const fs = require('fs');
 require('dotenv').config()
 
 
@@ -13,11 +14,11 @@ class MailService {
     constructor() {
         const smtpConfig = smtpTransport({
             host: process.env.SMTP_HOST,
-            secure: false,
+            secure: true,
             tls: {
                 rejectUnauthorized: false
             },
-            port: 587,
+            port: 465,
             auth: {
                 user: process.env.SMTP_USER,
                 pass: process.env.SMTP_PASS
@@ -71,12 +72,12 @@ class MailService {
                 from: this.from,
                 to: user.email,
                 replyTo: this.replyTo,
-                subject: `Password Reset Request - ${process.env.COMPANY_NAME}`,
+                subject: `Hello, welcome! - ${process.env.COMPANY_NAME}`,
             }, 'welcome', { name: user.fullname });
             return info;
         } catch (error) {
             console.log(error);
-            throw new Error('Failed so send verification email');
+            throw new Error('Failed to send verification email');
         }
     }
 
@@ -86,10 +87,10 @@ class MailService {
                 from: this.from,
                 to: user.email,
                 replyTo: this.replyTo,
-                subject: `Password Reset Request - ${process.env.COMPANY_NAME}`,
+                subject: `Email Verification - ${process.env.COMPANY_NAME}`,
             }, 'emailVerification', {
                 name: user.fullname,
-                verificationLink: `${process.env.CLIENT_URL}/password-reset?token=${token}`
+                verificationLink: `${process.env.CLIENT_URL}/auth/verify-email?token=${token}`
             })
             return info;
         } catch (error) {
