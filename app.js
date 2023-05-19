@@ -50,6 +50,44 @@ app.use('/users', usersRouter);
 app.use('/ads', adsRouter);
 app.use('/favorite', favRouter);
 
+// test routes
+const { EventEmitter } = require('events');
+
+// SSE event emitter for sending chat messages to connected clients
+const chatEmitter = new EventEmitter();
+// SSE endpoint for chat messages
+app.get('/chat', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+
+    // Event listener to send chat messages to the client
+    const sendMessage = message => {
+        res.write(`data: ${message}\n\n`);
+    };
+
+    // Register the event listener
+    chatEmitter.on('message', sendMessage);
+
+    // Remove the event listener when the client connection is closed
+    res.on('close', () => {
+        chatEmitter.off('message', sendMessage);
+    });
+});
+
+// Route for submitting chat messages
+app.post('/chat', (req, res) => {
+    const { message } = req.body;
+    if (message) {
+        // Emit the chat message event
+        chatEmitter.emit('message', message);
+        res.sendStatus(200);
+    } else {
+        res.status(400).json({ error: 'Invalid message' });
+    }
+});
+
 
 // Error handlers
 // Error handler for invalid routes

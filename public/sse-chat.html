@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Chat App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        .chat-container {
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 20px;
+            height: 300px;
+            overflow-y: scroll;
+        }
+
+        .message {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Chat App</h1>
+
+    <div class="chat-container">
+        <div id="messages"></div>
+    </div>
+
+    <form id="message-form">
+        <input type="text" id="message-input" placeholder="Type your message..." />
+        <button type="submit">Send</button>
+    </form>
+
+    <script>
+        // Connect to the SSE endpoint
+        const eventSource = new EventSource('/chat');
+
+        // Event listener to handle incoming chat messages
+        eventSource.addEventListener('message', event => {
+            const messagesContainer = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.textContent = event.data;
+            messagesContainer.appendChild(messageDiv);
+        });
+
+        // Event listener to handle form submission
+        document.getElementById('message-form').addEventListener('submit', event => {
+            event.preventDefault();
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value.trim();
+            if (message !== '') {
+                // Send the message to the server
+                fetch('/chat', {
+                    method: 'POST',
+                    body: JSON.stringify({ message }),
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                    .then(() => {
+                        // Clear the input field after sending the message
+                        messageInput.value = '';
+                    })
+                    .catch(error => console.error('Error sending message:', error));
+            }
+        });
+    </script>
+</body>
+
+</html>
