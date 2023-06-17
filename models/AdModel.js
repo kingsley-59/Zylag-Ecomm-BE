@@ -51,7 +51,7 @@ const adSchema = new Schema({
     status: {
         type: String,
         enum: ['active', 'pending', 'sold'],
-        default: 'Active',
+        default: 'active',
     },
 
     // delivery details

@@ -90,7 +90,7 @@ class MailService {
                 subject: `Email Verification - ${process.env.COMPANY_NAME}`,
             }, 'emailVerification', {
                 name: user.fullname,
-                verificationLink: `${process.env.CLIENT_URL}/auth/verify-email?token=${token}`
+                verificationLink: `${process.env.CLIENT_URL}/login?token=${token}`
             })
             return info;
         } catch (error) {

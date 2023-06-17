@@ -16,6 +16,7 @@
     "debug": "~2.6.9",
     "dotenv": "^16.0.3",
     "express": "~4.16.1",
+    "express-handlebars": "^7.0.7",
     "express-joi-validation": "^5.0.1",
     "handlebars": "^4.7.7",
     "html-to-text": "^9.0.5",

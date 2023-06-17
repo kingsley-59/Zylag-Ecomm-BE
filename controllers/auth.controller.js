@@ -26,7 +26,7 @@ exports.register = async (req, res) => {
         })
         await newUser.save();
 
-        return successResponse(res, null, "Registration successful.");
+        successResponse(res, null, "Registration successful.");
     } catch (error) {
         errorResponse(res, error.message);
     }
@@ -104,11 +104,11 @@ exports.verifyEmailWithToken = async (req, res)  => {
         user.emailIsVerified = true;
         await user.save();
 
-        // successResponse(res, null, "Email verified successfully.");
-        res.redirect('/');
+        successResponse(res, null, "Email verified successfully! Proceed to login.");
+        // res.redirect('/');
     } catch (error) {
-        // errorResponse(res, error.message);
-        res.send(error.message);
+        errorResponse(res, error.message);
+        // res.send(error.message);
     }
 }
 
