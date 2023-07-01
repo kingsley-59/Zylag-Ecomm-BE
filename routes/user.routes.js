@@ -11,7 +11,7 @@ router.get('/me', jwtVerifyToken, getUserProfile);
 router.get('/favorites', jwtVerifyToken, getUserFavorites);
 router.get('/ads', jwtVerifyToken, );
 
-router.put('/', jwtVerifyToken, filterFillableFields(User.allowedFields), updateUserProfile);
-router.put('/profile-photo', jwtVerifyToken, upload.single('photo'), updateProfilePhoto);
+router.put('/update', jwtVerifyToken, filterFillableFields(User.allowedFields), updateUserProfile);
+router.put('/update-photo', jwtVerifyToken, upload.single('photo'), updateProfilePhoto);
 
 module.exports = router;

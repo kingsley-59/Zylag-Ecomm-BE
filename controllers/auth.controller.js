@@ -53,6 +53,8 @@ exports.register = async (req, res) => {
  */
 exports.login = async (req, res) => {
     const { email, password } = req.body;
+    console.log('Cookie: ', req.cookies?.token)
+    console.log('signCookie: ', req.signedCookies?.token);
 
     try {
         const user = await User.findOne({ email });
@@ -63,6 +65,8 @@ exports.login = async (req, res) => {
 
         const payload = { id: user._id, email: user.email, role: user.role };
         const token = sign(payload, process.env.JWT_SECRET, { expiresIn: '30d' });
+
+        res.cookie('auth-token', token, { httpOnly: true, maxAge: 900000 });
 
         successResponse(res, { ...user.toObject(), passwordHash: undefined, token }, 'Login successful.');
     } catch (error) {
@@ -90,7 +94,7 @@ exports.sendEmailverificationLink = async (req, res) => {
     }
 }
 
-exports.verifyEmailWithToken = async (req, res)  => {
+exports.verifyEmailWithToken = async (req, res) => {
     const token = req.query?.token;
     if (!token) return badRequestResponse(res, "token is a required query parameter");
 
@@ -99,9 +103,9 @@ exports.verifyEmailWithToken = async (req, res)  => {
         const user = await User.findOne({ _id: decoded.id, isActive: true });
         if (!user) return badRequestResponse(res, "Email no longer exists.")
         if (user.emailVerificationToken !== token) return badRequestResponse('Invalid token.');
-        
+
         user.emailVerificationToken = null,
-        user.emailIsVerified = true;
+            user.emailIsVerified = true;
         await user.save();
 
         successResponse(res, null, "Email verified successfully! Proceed to login.");

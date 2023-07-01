@@ -48,7 +48,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Api routes
 app.use('/auth', authRouter);
-app.use('/users', usersRouter);
+app.use('/user', usersRouter);
 app.use('/ads', adsRouter);
 app.use('/favorite', favRouter);
 
@@ -106,6 +106,20 @@ app.use((err, req, res, next) => {
     // handle validation errors
     if (err && err.error && err.error?.isJoi) {
         return errorResponse(res, err.error.toString(), 400)
+    }
+
+    // handle mongoose validation errors
+    if (err instanceof mongoose.Error.ValidationError) {
+        // Handle Mongoose validation errors
+      const validationErrors = {};
+
+      // Loop through the errors and extract the relevant information
+      for (let field in err.errors) {
+        validationErrors[field] = err.errors[field].message;
+      }
+
+      // Return the validation errors
+      return errorResponse(res, "Form validation error", 400, validationErrors);
     }
 
     // Determine the error status code

@@ -16,6 +16,11 @@ const adSchema = new Schema({
         ref: 'Category',
         required: true,
     },
+    subCategory: {
+        type: Types.ObjectId,
+        ref: 'Category',
+        required: true,
+    },
     condition: {
         type: String,
         enum: ['new', 'used'],
@@ -30,14 +35,14 @@ const adSchema = new Schema({
         type: String,
     },
     tags: [{
-        type: Types.ObjectId,
-        ref: 'Tags'
+        type: String,
     }],
 
     // ad details
     adType: {
         type: String,
-        enum: ['forsale', 'tobuy']
+        enum: ['forsale', 'tobuy'],
+        default: 'forsale'
     },
     price: {
         type: Number,
@@ -45,7 +50,6 @@ const adSchema = new Schema({
     },
     quantity: {
         type: Number,
-        required: true,
         default: 1,
     },
     status: {
@@ -65,9 +69,13 @@ const adSchema = new Schema({
     }],
 
     // person details
+    phoneNumber: {
+        type: String
+    },
     entity: {
         type: String,
         enum: ['owner', 'business'],
+        default: 'owner'
     },
     createdBy: {
         type: Types.ObjectId,

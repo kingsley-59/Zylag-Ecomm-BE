@@ -6,7 +6,7 @@ const CategorySchema = new Schema({
     description: { type: String },
     image: { type: String },
     parent: { type: Types.ObjectId, ref: 'Category' },
-    level: { type: Number },
+    level: { type: Number, default: 1 },
 }, { timestamps: true });
 
 

@@ -11,12 +11,13 @@ const successResponse = (res, data, message = '', statusCode = 200) => {
 };
 
 // Error Response
-const errorResponse = (res, message, statusCode = 500) => {
+const errorResponse = (res, message, statusCode = 500, error = {}) => {
     console.log(message)
     res.status(statusCode).json({
         statusCode,
         success: false,
-        error: message
+        message,
+        error
     });
 };
 

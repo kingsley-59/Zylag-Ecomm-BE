@@ -36,7 +36,7 @@ const vschema = {
             'any.required': 'Password is required',
         }),
     token: Joi.string().required().trim(),
-    address: Joi.string()
+    address: Joi.string(), ...Joi
 }
 
 
@@ -66,4 +66,20 @@ exports.UpdateProfileSchema = Joi.object({
     email: vschema.email,
     phoneNumber: vschema.phoneNumber,
     address: vschema.address,
+})
+
+exports.CreateAdSchema = Joi.object({
+    title: vschema.string().required(),
+    condition: vschema.string().valid('new', 'used'),
+    description: vschema.string().required(),
+    tags: vschema.array().items(vschema.string()).required(),
+    category: vschema.string().required(),
+    subCategory: vschema.string().required(),
+    photos: vschema.array().required(),
+    video: vschema.string().uri(),
+    location: vschema.any().required(),
+    price: vschema.number().positive().required(),
+    quantity: vschema.number().positive(),
+    deliveryType: vschema.string(),
+    entity: vschema.string().valid('owner', 'business')
 })

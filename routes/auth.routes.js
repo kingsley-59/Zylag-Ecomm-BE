@@ -12,7 +12,7 @@ router.post('/register', validator.body(RegisterSchema), register);
 router.post('/login', validator.body(LoginSchema), login);
 
 router.post('/forgot-password', validator.body(ForgotPasswordSchema), forgotPassword);
-router.put('/reset-password', validator.body(ResestPasswordSchema), resetPassword)
+router.put('/reset-password', validator.body(ResestPasswordSchema), resetPassword);
 
 
 module.exports = router;

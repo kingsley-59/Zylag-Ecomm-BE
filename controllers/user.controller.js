@@ -3,7 +3,11 @@ const Ad = require("../models/AdModel");
 const User = require("../models/UserModel");
 
 
-
+/**
+ * 
+ * @param {import("express").Request} req 
+ * @param {import("express").Response} res 
+ */
 exports.getUserProfile = async function (req, res) {
     const { id } = req.user;
 
@@ -11,6 +15,7 @@ exports.getUserProfile = async function (req, res) {
         const user = await User.findById(id).select('-passwordHash');
         if (!user) return badRequestResponse(res, 'User not available.');
 
+        res.cookie('token', req.token, { maxAge: 1000 * 86400 });
         successResponse(res, user.toObject(), "success");
     } catch (error) {
         errorResponse(res, error.message);
