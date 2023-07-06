@@ -19,7 +19,6 @@ const adSchema = new Schema({
     subCategory: {
         type: Types.ObjectId,
         ref: 'Category',
-        required: true,
     },
     condition: {
         type: String,
@@ -45,7 +44,7 @@ const adSchema = new Schema({
         default: 'forsale'
     },
     price: {
-        type: Number,
+        type: Schema.Types.Mixed,
         required: true,
     },
     quantity: {
@@ -59,14 +58,12 @@ const adSchema = new Schema({
     },
 
     // delivery details
-    location: {
-        type: Types.ObjectId,
+    address: {
+        type: String,
         required: true,
     },
-    deliveryType: [{
-        type: Types.ObjectId,
-        ref: 'Delivery'
-    }],
+    latitude: Number,
+    longitude: Number,
 
     // person details
     phoneNumber: {

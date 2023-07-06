@@ -8,8 +8,7 @@ const { unauthorizedResponse, errorResponse, forbiddenResponse } = require('../h
  * @param {import('express').NextFunction} next 
 */
 exports.jwtVerifyToken = async (req, res, next) => {
-    console.log('Cookie: ', req.cookies?.token)
-    console.log('signCookie: ', req.signedCookies?.token);
+    
     try {
         let token;
 

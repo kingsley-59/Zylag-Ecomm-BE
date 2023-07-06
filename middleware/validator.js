@@ -74,11 +74,15 @@ exports.CreateAdSchema = Joi.object({
     description: vschema.string().required(),
     tags: vschema.array().items(vschema.string()).required(),
     category: vschema.string().required(),
-    subCategory: vschema.string().required(),
-    photos: vschema.array().required(),
-    video: vschema.string().uri(),
-    location: vschema.any().required(),
-    price: vschema.number().positive().required(),
+    subCategory: vschema.string(),
+    video: vschema.string().allow(''),
+    address: vschema.string().required(),
+    latitude: vschema.number().required(),
+    longitude: vschema.number().required(),
+    price: vschema.alternatives().try(
+        Joi.number().positive(),
+        Joi.string().valid('free', 'negotiable')
+    ).required(),
     quantity: vschema.number().positive(),
     deliveryType: vschema.string(),
     entity: vschema.string().valid('owner', 'business')

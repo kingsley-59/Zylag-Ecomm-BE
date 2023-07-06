@@ -1,17 +1,19 @@
-var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
-var logger = require('morgan');
-var mongoose = require('mongoose');
+let express = require('express');
+let path = require('path');
+let cookieParser = require('cookie-parser');
+let logger = require('morgan');
+let mongoose = require('mongoose');
 const cors = require('cors');
 
-var authRouter = require('./routes/auth.routes');
-var usersRouter = require('./routes/user.routes');
-var adsRouter = require('./routes/ad.routes');
-var favRouter = require('./routes/favorite.routes');
+let authRouter = require('./routes/auth.routes');
+let usersRouter = require('./routes/user.routes');
+let adsRouter = require('./routes/ad.routes');
+let categoryRoutes = require('./routes/category.routes');
+let favRouter = require('./routes/favorite.routes');
+let promoOptionsRouter = require('./routes/promoOption.routes');
 const { errorResponse } = require('./helpers/apiResponse');
 
-var app = express();
+let app = express();
 
 // DB connection
 const MONGODB_URL = process.env.MONGODB_URL;
@@ -50,7 +52,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/auth', authRouter);
 app.use('/user', usersRouter);
 app.use('/ads', adsRouter);
+app.use('/category', categoryRoutes);
 app.use('/favorite', favRouter);
+app.use('/promos', promoOptionsRouter);
 
 // test routes
 const { EventEmitter } = require('events');
@@ -105,7 +109,10 @@ app.use((err, req, res, next) => {
 
     // handle validation errors
     if (err && err.error && err.error?.isJoi) {
-        return errorResponse(res, err.error.toString(), 400)
+        console.log('Details : ', err.error.details)
+        const validationErrors = err.error.details?.map(detail => detail.message);
+        const message = validationErrors?.join(' | ');
+        return errorResponse(res, `Request validation error: ${message}`, 400, err.error)
     }
 
     // handle mongoose validation errors
@@ -119,7 +126,7 @@ app.use((err, req, res, next) => {
       }
 
       // Return the validation errors
-      return errorResponse(res, "Form validation error", 400, validationErrors);
+      return errorResponse(res, "Data validation error", 400, validationErrors);
     }
 
     // Determine the error status code

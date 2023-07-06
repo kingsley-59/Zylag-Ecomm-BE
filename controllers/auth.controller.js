@@ -53,8 +53,6 @@ exports.register = async (req, res) => {
  */
 exports.login = async (req, res) => {
     const { email, password } = req.body;
-    console.log('Cookie: ', req.cookies?.token)
-    console.log('signCookie: ', req.signedCookies?.token);
 
     try {
         const user = await User.findOne({ email });
@@ -65,8 +63,6 @@ exports.login = async (req, res) => {
 
         const payload = { id: user._id, email: user.email, role: user.role };
         const token = sign(payload, process.env.JWT_SECRET, { expiresIn: '30d' });
-
-        res.cookie('auth-token', token, { httpOnly: true, maxAge: 900000 });
 
         successResponse(res, { ...user.toObject(), passwordHash: undefined, token }, 'Login successful.');
     } catch (error) {

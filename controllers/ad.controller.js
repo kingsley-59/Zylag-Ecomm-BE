@@ -5,6 +5,30 @@ const Category = require("../models/CategoryModel");
 
 
 
+exports.getAllAds = async function (req, res) {
+    const result = { ads: [], totalAds: 0, totalPages: 0, currentPage: 0, };
+
+    try {
+        const pageNumber = parseInt(req.query?.page || 1);
+        const limitNumber = parseInt(req.query?.limit || 10);
+
+        const ads = await Ad.find({})
+            .sort({ createdAt: req.query?.desc == false ? 'asc' : 'desc' })
+            .skip((pageNumber - 1) * limitNumber)
+            .limit(limitNumber)
+            .populate('category');
+
+        result.ads = ads;
+        result.totalAds = await Ad.countDocuments({});
+        result.totalPages = Math.ceil(result.totalAds / limitNumber)
+        result.currentPage = pageNumber;
+
+        successResponse(res, result, "Ads fetched successfully");
+    } catch (error) {
+        errorResponse(res, error.message);
+    }
+}
+
 exports.getAdsByCategory = async function (req, res) {
     const { categoryId } = req.params;
     const result = { ads: [], totalAds: 0, totalPages: 0, currentPage: 0, };
@@ -21,7 +45,7 @@ exports.getAdsByCategory = async function (req, res) {
                 .sort({ createdAt: req.query?.desc == false ? 'asc' : 'desc' })
                 .skip((pageNumber - 1) * limitNumber)
                 .limit(limitNumber)
-                .populate('tags');
+                .populate('category');
             result.totalAds = await Ad.countDocuments({ category: category._id });
             result.totalPages = Math.ceil(result.totalAds / limitNumber);
         } else {
@@ -31,7 +55,7 @@ exports.getAdsByCategory = async function (req, res) {
                     .sort({ createdAt: req.query?.desc == false ? 'asc' : 'desc' })
                     .skip((pageNumber - 1) * limitNumber)
                     .limit(limitNumber)
-                    .populate('tags');
+                    .populate('category');
                 result.ads.push(...ads);
                 result.totalAds += await Ad.countDocuments({ category: c._id });
             }
@@ -84,7 +108,7 @@ exports.searchAdsWithFilters = async function (req, res) {
             .sort({ createdAt: desc == false ? 'asc' : 'desc' })
             .skip((pageNumber - 1) * limitNumber)
             .limit(limitNumber)
-            .populate('tags category');
+            .populate('category');
         result.ads = ads;
         result.totalAds = await Ad.countDocuments(searchQuery);
         result.totalPages = Math.ceil(result.totalAds / limitNumber)
@@ -97,20 +121,19 @@ exports.searchAdsWithFilters = async function (req, res) {
 }
 
 exports.getAdsByTag = async function (req, res) {
-    const { tagId } = req.params;
+    const tags = req.query?.tags?.split(',')
     const result = { ads: [], totalAds: 0, totalPages: 0, currentPage: 0 };
 
     try {
         const pageNumber = parseInt(req.query?.page || 1);
         const limitNumber = parseInt(req.query?.limit || 10);
-        const adsWithTag = await Ad.find({ tags: { $in: [tagId] } })
+        const adsWithTag = await Ad.find({ tags: { $in: [tags] } })
             .sort({ createdAt: req.query?.desc == false ? 'asc' : 'desc' })
             .skip((pageNumber - 1) * limitNumber)
             .limit(limitNumber)
-            .populate('tags');
 
         result.ads = adsWithTag;
-        result.totalAds = await Ad.countDocuments({ tags: { $in: [tagId] } })
+        result.totalAds = await Ad.countDocuments({ tags: { $in: [tags] } })
         result.totalPages = Math.ceil(result.totalAds / limitNumber);
         result.currentPage = pageNumber;
 
@@ -122,10 +145,14 @@ exports.getAdsByTag = async function (req, res) {
 
 exports.createAd = async function (req, res, next) {
     const { id } = req.user;
-    const photos = req.files;
+    const photos = req.files.photos;
     if (!Array.isArray(photos) || photos?.length < 4) return badRequestResponse(res, "At least 4 photos are required.");
 
     try {
+        // check if ad exists
+        if (await Ad.findOne({ title: { $regex: req.body.title, $options: 'i' } })) {
+            return badRequestResponse(res, 'Ad with this title already exists');
+        }
         const newAd = new Ad({
             ...req.body,
             photos: photos.map(photo => photo.path),
@@ -149,7 +176,7 @@ exports.createCategory = async function (req, res) {
         if (!name) return badRequestResponse(res, "category name is required");
 
         // check if category exists
-        if (await Category.findOne({name: {$regex: name, $options: 'i'}})) {
+        if (await Category.findOne({ name: { $regex: name, $options: 'i' } })) {
             return badRequestResponse(res, 'Category already exists');
         }
         if (parent) {
@@ -172,18 +199,18 @@ exports.createCategory = async function (req, res) {
 exports.getAllCategories = async function (req, res) {
     try {
         let categories = [];
-        const parentCategories = await Category.find({ level: 1 }).select('-createdAt -updatedAt -__v').sort({createdAt: 'desc'});
+        const parentCategories = await Category.find({ level: 1 }).select('-createdAt -updatedAt -__v').sort({ createdAt: 'desc' });
         if (!parentCategories || parentCategories.length < 1) {
             return successResponse(res, { categories }, 'No categories yet');
         }
 
         for (let c of parentCategories) {
-            let subCategories = await Category.find({parent: c._id}).select('-createdAt -updatedAt -__v').sort({createdAt: 'desc'}).lean();
+            let subCategories = await Category.find({ parent: c._id }).select('-createdAt -updatedAt -__v').sort({ createdAt: 'desc' }).lean();
             let category = { ...c.toObject(), subCategories }
             categories.push(category);
         }
 
-        successResponse(res, categories, "Success");
+        successResponse(res, { categories, count: categories.length }, "Success");
     } catch (error) {
         errorResponse(res, error.message);
     }

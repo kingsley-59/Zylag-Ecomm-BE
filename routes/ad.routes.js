@@ -1,21 +1,17 @@
-const { getAdsByCategory, getAdsByTag, searchAdsWithFilters, createAd, createCategory, updateCategory, getAllCategories, deleteCategory } = require('../controllers/ad.controller');
+const { getAdsByCategory, getAdsByTag, searchAdsWithFilters, createAd, getAllAds } = require('../controllers/ad.controller');
 const { removeProtectedFields } = require('../middleware/filterFillableFields');
-const { jwtVerifyToken, onlyAdmins } = require('../middleware/jwtAuth');
+const { jwtVerifyToken } = require('../middleware/jwtAuth');
 const upload = require('../middleware/upload');
+const { CreateAdSchema } = require('../middleware/validator');
 
 const router = require('express').Router();
+const validator = require('express-joi-validation').createValidator({ passError: true });
 
-
-router.get('/category/all', getAllCategories)
+router.get('/', getAllAds);
 router.get('/category/:categoryId', getAdsByCategory);
-router.get('/tag/:tagId', getAdsByTag);
+router.get('/tag', getAdsByTag);
 router.get('/search', searchAdsWithFilters);
 
-router.post('/new', jwtVerifyToken, removeProtectedFields(['views']), upload.array('photos', 6), createAd);
-router.post('/category/new', jwtVerifyToken, onlyAdmins, createCategory);
-
-router.put('/category/:categoryId', jwtVerifyToken, onlyAdmins, updateCategory);
-
-router.delete('/category/:categoryId', deleteCategory);
+router.post('/new', jwtVerifyToken, removeProtectedFields(['status','views']), upload.fields([{name: 'photos'}]), validator.body(CreateAdSchema), createAd);
 
 module.exports = router;
