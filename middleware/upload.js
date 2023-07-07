@@ -13,7 +13,7 @@ const storage = new CloudinaryStorage({
     cloudinary,
     params: {
         folder: 'ZylagBucket',
-        allowedFormats: ['jpg', 'jpeg', 'png'],
+        allowedFormats: ['jpg', 'jpeg', 'png', 'webp'],
     },
 });
 

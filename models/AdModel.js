@@ -9,7 +9,6 @@ const adSchema = new Schema({
     },
     description: {
         type: String,
-        required: true,
     },
     category: {
         type: Types.ObjectId,
@@ -19,6 +18,7 @@ const adSchema = new Schema({
     subCategory: {
         type: Types.ObjectId,
         ref: 'Category',
+        required: true,
     },
     condition: {
         type: String,
